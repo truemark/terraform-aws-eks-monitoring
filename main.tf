@@ -1,4 +1,8 @@
-# AMP
+data "aws_eks_cluster_auth" "cluster" {
+  name = var.cluster_name
+}
+
+data "aws_region" "current" {}
 
 provider "helm" {
   kubernetes {
@@ -8,17 +12,16 @@ provider "helm" {
   }
 }
 
+provider "kubernetes" {
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
 
 locals {
   oidc_provider            = replace(var.cluster_oidc_issuer_url, "https://", "")
   iamproxy_service_account = "${var.cluster_name}-iamproxy-service-account"
 }
-
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.cluster_name
-}
-
-data "aws_region" "current" {}
 
 module "amp_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
