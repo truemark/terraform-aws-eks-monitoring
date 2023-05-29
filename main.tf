@@ -1,26 +1,6 @@
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.cluster_name
-}
-
-data "aws_region" "current" {}
-
-provider "helm" {
-  kubernetes {
-    host                   = var.cluster_endpoint
-    cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
-    token                  = data.aws_eks_cluster_auth.cluster.token
-  }
-}
-
-provider "kubernetes" {
-  host                   = var.cluster_endpoint
-  cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-}
-
 locals {
   oidc_provider            = replace(var.cluster_oidc_issuer_url, "https://", "")
-  iamproxy_service_account = "${var.cluster_name}-iamproxy-service-account"
+  iamproxy_service_account = "amp-iamproxy-service-account"
 }
 
 module "amp_irsa_role" {
@@ -29,7 +9,7 @@ module "amp_irsa_role" {
   role_name = "${var.cluster_name}-EKSAMPServiceAccountRole"
 
   attach_amazon_managed_service_prometheus_policy  = true
-  amazon_managed_service_prometheus_workspace_arns = [var.amp_arn]
+  amazon_managed_service_prometheus_workspace_arns = [var.amp_name != null ? aws_prometheus_workspace.k8s.0.arn : var.amp_arn]
 
   oidc_providers = {
     main = {
@@ -54,13 +34,14 @@ resource "helm_release" "prometheus_install" {
   namespace  = kubernetes_namespace.prometheus.metadata[0].name
 
   set {
-    name  = "serviceAccount.server.annotations.eks\\.amazonaws\\.com/role-arn"
+    name  = "serviceAccounts.server.annotations.eks\\.amazonaws\\.com/role-arn"
     value = module.amp_irsa_role.iam_role_arn
     type  = "string"
   }
   set {
     name  = "serviceAccounts.server.name"
     value = local.iamproxy_service_account
+    type  = "string"
   }
   set {
     name  = "alertmanager.enabled"
@@ -72,12 +53,34 @@ resource "helm_release" "prometheus_install" {
   }
   set {
     name  = "server.remoteWrite[0].url"
-    value = "https://aps-workspaces.${data.aws_region.current.name}.amazonaws.com/workspaces/${var.amp_id}/api/v1/remote_write"
+    value = "https://aps-workspaces.${var.region}.amazonaws.com/workspaces/${var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id}/api/v1/remote_write"
+    type  = "string"
   }
   set {
     name  = "server.remoteWrite[0].sigv4.region"
-    value = data.aws_region.current.name
+    value = var.region
+    type  = "string"
+  }
+  set {
+    name  = "server.remoteWrite[0].queue_config.max_samples_per_send"
+    value = 1000
+  }
+  set {
+    name  = "server.remoteWrite[0].queue_config.max_shards"
+    value = 200
+  }
+  set {
+    name  = "server.remoteWrite[0].queue_config.capacity"
+    value = 2500
   }
 
   timeout = 600
+}
+
+resource "aws_prometheus_workspace" "k8s" {
+  count = var.amp_name != null ? 1 : 0
+
+  alias = var.amp_name
+
+  tags = var.tags
 }
