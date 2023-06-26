@@ -84,3 +84,9 @@ resource "aws_prometheus_workspace" "k8s" {
 
   tags = var.tags
 }
+
+resource "aws_prometheus_rule_group_namespace" "k8s" {
+  name         = "k8s-rules"
+  workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
+  data         = file("${path.module}/rules.yaml")
+}
