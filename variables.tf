@@ -52,3 +52,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "enable_alerts" {
+  description = "Enable alerts"
+  type        = bool
+  default     = true
+}

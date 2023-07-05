@@ -86,6 +86,8 @@ resource "aws_prometheus_workspace" "k8s" {
 }
 
 resource "aws_prometheus_alert_manager_definition" "k8s" {
+  count        = var.enable_alerts ? 1 : 0
+
   workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
   definition   = <<EOF
 default_template: |
@@ -114,6 +116,8 @@ EOF
 }
 
 resource "aws_prometheus_rule_group_namespace" "k8s" {
+  count        = var.enable_alerts ? 1 : 0
+
   name         = "k8s-rules"
   workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
   data         = file("${path.module}/rules.yaml")
