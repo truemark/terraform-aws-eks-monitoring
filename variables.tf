@@ -36,8 +36,25 @@ variable "cluster_oidc_issuer_url" {
   type        = string
 }
 
+variable "alerts_sns_topics_arn" {
+  description = "The ARN of the SNS topic to send alerts to"
+  type        = string
+}
+
+variable "alert_role_arn" {
+  description = "The ARN of the role to assume when sending alerts to SNS"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "A map of tags to add to all resources."
   type        = map(string)
   default     = {}
+}
+
+variable "enable_alerts" {
+  description = "Enable alerts"
+  type        = bool
+  default     = true
 }

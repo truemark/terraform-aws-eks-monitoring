@@ -84,3 +84,41 @@ resource "aws_prometheus_workspace" "k8s" {
 
   tags = var.tags
 }
+
+resource "aws_prometheus_alert_manager_definition" "k8s" {
+  count        = var.enable_alerts ? 1 : 0
+
+  workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
+  definition   = <<EOF
+default_template: |
+   {{ define "sns.default.message" }}{{ "{" }}"receiver": "{{ .Receiver }}","status": "{{ .Status }}","alerts": [{{ range $alertIndex, $alerts := .Alerts }}{{ if $alertIndex }}, {{ end }}{{ "{" }}"status": "{{ $alerts.Status }}"{{ if gt (len $alerts.Labels.SortedPairs) 0 -}},"labels": {{ "{" }}{{ range $index, $label := $alerts.Labels.SortedPairs }}{{ if $index }}, {{ end }}"{{ $label.Name }}": "{{ $label.Value }}"{{ end }}{{ "}" }}{{- end }}{{ if gt (len $alerts.Annotations.SortedPairs ) 0 -}},"annotations": {{ "{" }}{{ range $index, $annotations := $alerts.Annotations.SortedPairs }}{{ if $index }}, {{ end }}"{{ $annotations.Name }}": "{{ $annotations.Value }}"{{ end }}{{ "}" }}{{- end }},"startsAt": "{{ $alerts.StartsAt }}","endsAt": "{{ $alerts.EndsAt }}","generatorURL": "{{ $alerts.GeneratorURL }}","fingerprint": "{{ $alerts.Fingerprint }}"{{ "}" }}{{ end }}]{{ if gt (len .GroupLabels) 0 -}},"groupLabels": {{ "{" }}{{ range $index, $groupLabels := .GroupLabels.SortedPairs }}{{ if $index }}, {{ end }}"{{ $groupLabels.Name }}": "{{ $groupLabels.Value }}"{{ end }}{{ "}" }}{{- end }}{{ if gt (len .CommonLabels) 0 -}},"commonLabels": {{ "{" }}{{ range $index, $commonLabels := .CommonLabels.SortedPairs }}{{ if $index }}, {{ end }}"{{ $commonLabels.Name }}": "{{ $commonLabels.Value }}"{{ end }}{{ "}" }}{{- end }}{{ if gt (len .CommonAnnotations) 0 -}},"commonAnnotations": {{ "{" }}{{ range $index, $commonAnnotations := .CommonAnnotations.SortedPairs }}{{ if $index }}, {{ end }}"{{ $commonAnnotations.Name }}": "{{ $commonAnnotations.Value }}"{{ end }}{{ "}" }}{{- end }}{{ "}" }}{{ end }}
+   {{ define "sns.default.subject" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]{{ end }}
+alertmanager_config: |
+  global:
+  templates:
+    - 'default_template'
+  route:
+    receiver: 'sns'
+  receivers:
+    - name: 'sns'
+      sns_configs:
+        - subject: 'prometheus_alert'
+          sigv4:
+            region: '${var.region}'
+%{if var.alert_role_arn != null}
+            role_arn: '${var.alert_role_arn}'
+%{endif}
+          topic_arn: '${var.alerts_sns_topics_arn}'        
+          attributes:
+            amp_arn: '${var.amp_name != null ? aws_prometheus_workspace.k8s.0.arn : var.amp_arn}'
+            cluster_name: '${var.cluster_name}'
+EOF
+}
+
+resource "aws_prometheus_rule_group_namespace" "k8s" {
+  count        = var.enable_alerts ? 1 : 0
+
+  name         = "k8s-rules"
+  workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
+  data         = file("${path.module}/rules.yaml")
+}
