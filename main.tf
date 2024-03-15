@@ -24,7 +24,7 @@ module "amp_irsa_role" {
 resource "helm_release" "monitoring_stack" {
   repository       = "https://prometheus-community.github.io/helm-charts"
   name             = "k8s"
-  namespace        = "monitoring"
+  namespace        = "prometheus"
   create_namespace = true
   chart            = "kube-prometheus-stack"
   version          = "57.0.3"
@@ -42,7 +42,7 @@ resource "helm_release" "monitoring_stack" {
       enabled: true
       serviceAccount:
         create: true
-        name: "prometheus"
+        name: ${local.iamproxy_service_account}
         annotations:
           eks.amazonaws.com/role-arn: ${module.amp_irsa_role.iam_role_arn}
         automountServiceAccountToken: true
