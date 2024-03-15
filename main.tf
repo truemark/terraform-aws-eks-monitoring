@@ -21,60 +21,58 @@ module "amp_irsa_role" {
   tags = var.tags
 }
 
-resource "kubernetes_namespace" "prometheus" {
-  metadata {
-    name = "prometheus"
-  }
-}
-
-resource "helm_release" "prometheus_install" {
-  name       = "prometheus"
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "prometheus"
-  namespace  = kubernetes_namespace.prometheus.metadata[0].name
-
-  set {
-    name  = "serviceAccounts.server.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.amp_irsa_role.iam_role_arn
-    type  = "string"
-  }
-  set {
-    name  = "serviceAccounts.server.name"
-    value = local.iamproxy_service_account
-    type  = "string"
-  }
-  set {
-    name  = "alertmanager.enabled"
-    value = false
-  }
-  set {
-    name  = "prometheus-pushgateway.enabled"
-    value = false
-  }
-  set {
-    name  = "server.remoteWrite[0].url"
-    value = "https://aps-workspaces.${var.region}.amazonaws.com/workspaces/${var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id}/api/v1/remote_write"
-    type  = "string"
-  }
-  set {
-    name  = "server.remoteWrite[0].sigv4.region"
-    value = var.region
-    type  = "string"
-  }
-  set {
-    name  = "server.remoteWrite[0].queue_config.max_samples_per_send"
-    value = 1000
-  }
-  set {
-    name  = "server.remoteWrite[0].queue_config.max_shards"
-    value = 200
-  }
-  set {
-    name  = "server.remoteWrite[0].queue_config.capacity"
-    value = 2500
-  }
-
-  timeout = 600
+resource "helm_release" "monitoring_stack" {
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  name             = "prometheus-community"
+  namespace        = "monitoring"
+  create_namespace = true
+  chart            = "kube-prometheus-stack"
+  version          = "57.0.3"
+  values = [
+    <<-EOT
+    cleanPrometheusOperatorObjectNames: true
+    fullnameOverride: "k8s"
+    defaultRules:
+      create: ${var.monitoring_stack_create_default_rules}
+    alertmanager:
+      enabled: ${var.monitoring_stack_enable_alertmanager}
+    grafana:
+      enabled: ${var.monitoring_stack_enable_grafana}
+    prometheus:
+      enabled: true
+      serviceAccount:
+        create: true
+        name: "prometheus"
+        annotations:
+          eks.amazonaws.com/role-arn: ${module.amp_irsa_role.iam_role_arn}
+        automountServiceAccountToken: true
+      prometheusSpec:
+        enableAdminAPI: true
+        tolerations: ${jsonencode(var.prometheus_node_tolerations.tolerations)}
+        nodeSelector: ${jsonencode(var.prometheus_node_selector.nodeSelector)}
+        retention: 1d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: gp3
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: ${var.prometheus_pvc_storage_size}
+        ruleSelectorNilUsesHelmValues: false
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        logLevel: error
+        remoteWrite:
+        - queue_config:
+            capacity: 2500
+            max_samples_per_send: 1000
+            max_shards: 200
+          sigv4:
+            region: us-west-2
+          url: https://aps-workspaces.${var.region}.amazonaws.com/workspaces/${var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id}/api/v1/remote_write
+    EOT
+  ]
 }
 
 resource "aws_prometheus_workspace" "k8s" {
@@ -86,7 +84,7 @@ resource "aws_prometheus_workspace" "k8s" {
 }
 
 resource "aws_prometheus_alert_manager_definition" "k8s" {
-  count        = var.enable_alerts ? 1 : 0
+  count = var.enable_alerts ? 1 : 0
 
   workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
   definition   = <<EOF
@@ -116,7 +114,7 @@ EOF
 }
 
 resource "aws_prometheus_rule_group_namespace" "k8s" {
-  count        = var.enable_alerts ? 1 : 0
+  count = var.enable_alerts ? 1 : 0
 
   name         = "k8s-rules"
   workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
