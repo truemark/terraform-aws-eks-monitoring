@@ -14,7 +14,7 @@ module "amp_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn               = var.oidc_provider_arn
-      namespace_service_accounts = ["prometheus:${local.iamproxy_service_account}"]
+      namespace_service_accounts = ["prometheus:${local.iamproxy_service_account}", "monitoring:${local.iamproxy_service_account}"]
     }
   }
 
