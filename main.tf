@@ -23,7 +23,7 @@ module "amp_irsa_role" {
 
 resource "helm_release" "monitoring_stack" {
   repository       = "https://prometheus-community.github.io/helm-charts"
-  name             = "k8s"
+  name             = "monitoring"
   namespace        = "prometheus"
   create_namespace = true
   chart            = "kube-prometheus-stack"
