@@ -61,13 +61,17 @@ variable "enable_alerts" {
 
 variable "prometheus_node_tolerations" {
   description = "K8S node tolerations for prometheus"
-  type        = list(any)
-  default     = []
+  type        = map(any)
+  default = {
+    tolerations : []
+  }
 }
 variable "prometheus_node_selector" {
   description = "K8S node selector for prometheus"
   type        = map(any)
-  default     = {}
+  default = {
+    nodeSelector : {}
+  }
 }
 
 variable "prometheus_pvc_storage_size" {
