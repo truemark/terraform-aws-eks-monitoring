@@ -58,3 +58,42 @@ variable "enable_alerts" {
   type        = bool
   default     = true
 }
+
+variable "prometheus_node_tolerations" {
+  description = "K8S node tolerations for prometheus"
+  type        = map(any)
+  default = {
+    tolerations : []
+  }
+}
+variable "prometheus_node_selector" {
+  description = "K8S node selector for prometheus"
+  type        = map(any)
+  default = {
+    nodeSelector : {}
+  }
+}
+
+variable "prometheus_pvc_storage_size" {
+  description = "Disk size for prometheus data storage"
+  type        = string
+  default     = "30Gi"
+}
+
+variable "monitoring_stack_enable_grafana" {
+  description = "Enable on cluster grafana on monitoring stack"
+  type        = bool
+  default     = true
+}
+
+variable "monitoring_stack_create_default_rules" {
+  description = "Enable defaults k8s rules on cluster"
+  type        = bool
+  default     = false
+}
+
+variable "monitoring_stack_enable_alertmanager" {
+  description = "Enable on cluster alertmanager"
+  type        = bool
+  default     = false
+}
