@@ -71,6 +71,38 @@ resource "helm_release" "monitoring_stack" {
           sigv4:
             region: us-west-2
           url: https://aps-workspaces.${var.region}.amazonaws.com/workspaces/${var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id}/api/v1/remote_write
+        scrape_configs:
+        - job_name: kubernetes-nodes-cadvisor
+          scrape_interval: 10s
+          scrape_timeout: 10s
+          scheme: https  # remove if you want to scrape metrics on insecure port
+          tls_config:
+            ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+          kubernetes_sd_configs:
+            - role: node
+          relabel_configs:
+            - action: labelmap
+              regex: __meta_kubernetes_node_label_(.+)
+            # Only for Kubernetes ^1.7.3.
+            # See: https://github.com/prometheus/prometheus/issues/2916
+            - target_label: __address__
+              replacement: kubernetes.default.svc:443
+            - source_labels: [__meta_kubernetes_node_name]
+              regex: (.+)
+              target_label: __metrics_path__
+              replacement: /api/v1/nodes/$${1}/proxy/metrics/cadvisor
+          metric_relabel_configs:
+            - action: replace
+              source_labels: [id]
+              regex: '^/machine\.slice/machine-rkt\\x2d([^\\]+)\\.+/([^/]+)\.service$'
+              target_label: rkt_container_name
+              replacement: '$${2}-$${1}'
+            - action: replace
+              source_labels: [id]
+              regex: '^/system\.slice/(.+)\.service$'
+              target_label: systemd_service_name
+              replacement: '$${1}'
     EOT
   ]
 }
