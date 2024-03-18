@@ -97,6 +97,7 @@ alertmanager_config: |
     - 'default_template'
   route:
     receiver: 'sns'
+    group_by: ['...']
   receivers:
     - name: 'sns'
       sns_configs:
