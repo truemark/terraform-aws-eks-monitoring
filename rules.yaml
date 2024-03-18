@@ -252,7 +252,7 @@ groups:
   - alert: KubePodCrashLooping
     annotations:
       description: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container
-        }}) is in waiting state (reason: "CrashLoopBackOff").'
+        }}) is in waiting state (reason: CrashLoopBackOff).'
       runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepodcrashlooping
       summary: Pod is crash looping.
     expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",
