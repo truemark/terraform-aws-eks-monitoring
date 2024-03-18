@@ -131,6 +131,12 @@ alertmanager_config: |
   global:
   templates:
     - 'default_template'
+  inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']
   route:
     receiver: 'sns'
     group_by: ['...']
