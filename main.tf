@@ -34,6 +34,41 @@ resource "helm_release" "monitoring_stack" {
     fullnameOverride: "k8s"
     defaultRules:
       create: ${var.monitoring_stack_create_default_rules}
+      rules:
+        alertmanager: false
+        etcd: false
+        configReloaders: false
+        general: false
+        k8sContainerCpuUsageSecondsTotal: false
+        k8sContainerMemoryCache: false
+        k8sContainerMemoryRss: false
+        k8sContainerMemorySwap: false
+        k8sContainerResource: false
+        k8sContainerMemoryWorkingSetBytes: false
+        k8sPodOwner: false
+        kubeApiserverAvailability: false
+        kubeApiserverBurnrate: false
+        kubeApiserverHistogram: false
+        kubeApiserverSlos: false
+        kubeControllerManager: false
+        kubelet: false
+        kubeProxy: false
+        kubePrometheusGeneral: false
+        kubePrometheusNodeRecording: true
+        kubernetesApps: false
+        kubernetesResources: false
+        kubernetesStorage: false
+        kubernetesSystem: false
+        kubeSchedulerAlerting: false
+        kubeSchedulerRecording: false
+        kubeStateMetrics: false
+        network: false
+        node: false
+        nodeExporterAlerting: false
+        nodeExporterRecording: true
+        prometheus: false
+        prometheusOperator: false
+        windows: false
     alertmanager:
       enabled: ${var.monitoring_stack_enable_alertmanager}
     grafana:
