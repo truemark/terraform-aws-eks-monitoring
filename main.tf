@@ -74,6 +74,11 @@ resource "helm_release" "prometheus_install" {
     value = 2500
   }
 
+  set {
+    name  = "server.resources.requests.memory"
+    value = var.prometheus_server_request_memory
+  }
+
   timeout = 600
 }
 
