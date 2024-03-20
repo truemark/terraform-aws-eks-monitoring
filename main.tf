@@ -74,6 +74,11 @@ resource "helm_release" "prometheus_install" {
     value = 2500
   }
 
+  set {
+    name  = "server.resources.requests.memory"
+    value = var.prometheus_server_request_memory
+  }
+
   timeout = 600
 }
 
@@ -92,7 +97,7 @@ resource "aws_prometheus_alert_manager_definition" "k8s" {
   definition   = <<EOF
 template_files:
   default_template: |
-    {{ define "sns.default.message" }}{"receiver":"{{ .Receiver }}","source":"prometheus","status":"{{ .Status }}","alerts":[{{ range $alertIndex, $alerts := .Alerts }}{{ if $alertIndex }},{{ end }}{"status":"{{ $alerts.Status }}",{{ if gt (len $alerts.Labels.SortedPairs) 0 }}"labels":{{ "{" }}{{ range $index, $label := $alerts.Labels.SortedPairs }}{{ if $index }},{{ end }}"{{ $label.Name }}":"{{ $label.Value }}"{{ end }}{{ "}" }},{{ end }}{{ if gt (len $alerts.Annotations.SortedPairs) 0 }}"annotations":{{ "{" }}{{ range $index, $annotations := $alerts.Annotations.SortedPairs }}{{ if $index }},{{ end }}"{{ $annotations.Name }}":"{{ $annotations.Value }}"{{ end }}{{ "}" }}{{ end }}} {{ end }}]}{{ end }}
+    {{ define "sns.default.message" }}{"receiver":"{{ .Receiver }}","source":"prometheus","status":"{{ .Status }}","alerts":[{{ range $alertIndex, $alerts := .Alerts }}{{ if $alertIndex }},{{ end }}{"status":"{{ $alerts.Status }}",{{ if gt (len $alerts.Labels.SortedPairs) 0 }}"labels":{{ "{" }}{{ range $index, $label := $alerts.Labels.SortedPairs }}{{ if $index }},{{ end }}"{{ $label.Name }}":"{{ $label.Value }}"{{ end }}{{ "}" }},{{ end }}{{ if gt (len $alerts.Annotations.SortedPairs) 0 }}"annotations":{{ "{" }}{{ range $index, $annotations := $alerts.Annotations.SortedPairs }}{{ if $index }},{{ end }}"{{ $annotations.Name }}":"{{ $annotations.Value }}"{{ end }}{{ "}" }}{{ end }}}{{ end }}]}{{ end }}
     {{ define "sns.default.subject" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]{{ end }}
 alertmanager_config: |
   global:
