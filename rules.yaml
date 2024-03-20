@@ -1,5 +1,4 @@
 groups:
-
 - name: KubestateExporter
   rules:
     - alert: KubernetesNodeNotReady
