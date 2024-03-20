@@ -89,7 +89,7 @@ variable "monitoring_stack_enable_grafana" {
 variable "monitoring_stack_create_default_rules" {
   description = "Enable defaults k8s rules on cluster"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "monitoring_stack_enable_alertmanager" {
