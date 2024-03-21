@@ -104,5 +104,11 @@ variable "prometheus_server_data_volume_size" {
   default     = "150Gi"
 }
 
+variable "amp_alerting_rules_exclude_namespace" {
+  description = "Apply exclusion of namespace pattern defined"
+  type = string
+  default = ""
+}
+
 
 
