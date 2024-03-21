@@ -80,7 +80,7 @@ resource "helm_release" "prometheus_install" {
   }
 
   set {
-    name = "server.persistentVolume.size"
+    name  = "server.persistentVolume.size"
     value = var.prometheus_server_data_volume_size
   }
 

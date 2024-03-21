@@ -93,15 +93,15 @@ variable "monitoring_stack_enable_pushgateway" {
 }
 
 variable "prometheus_server_request_memory" {
-  type = string
+  type        = string
   description = "Requested memory for prometheus instance"
-  default = "4Gi"
+  default     = "4Gi"
 }
 
 variable "prometheus_server_data_volume_size" {
-  type = string
+  type        = string
   description = "Volume size for prometheus data"
-  default = "150Gi"
+  default     = "150Gi"
 }
 
 
