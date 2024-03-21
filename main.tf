@@ -79,6 +79,11 @@ resource "helm_release" "prometheus_install" {
     value = var.prometheus_server_request_memory
   }
 
+  set {
+    name = "server.persistentVolume.size"
+    value = var.prometheus_server_data_volume_size
+  }
+
   timeout = 600
 }
 

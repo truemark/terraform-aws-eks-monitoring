@@ -98,5 +98,11 @@ variable "prometheus_server_request_memory" {
   default = "4Gi"
 }
 
+variable "prometheus_server_data_volume_size" {
+  type = string
+  description = "Volume size for prometheus data"
+  default = "150Gi"
+}
+
 
 
