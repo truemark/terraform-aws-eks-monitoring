@@ -47,16 +47,16 @@ groups:
         description: "{{ $labels.node }} is out of capacity VALUE = {{ $value }}"
 
     - alert: KubernetesContainerOomKiller
-      expr: '(kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m]) == 1'
+      expr: '(kube_pod_container_status_restarts_total{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} - kube_pod_container_status_restarts_total{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled", %{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}[10m]) == 1'
       for: 0m
       labels:
         severity: warning
       annotations:
         summary: Kubernetes container oom killer (instance {{ $labels.instance }})
-        description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 10 minutes. VALUE = {{ $value }}"
+        description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 10 minutes."
 
     - alert: KubernetesJobFailed
-      expr: 'kube_job_status_failed > 0'
+      expr: 'kube_job_status_failed{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} > 0'
       for: 0m
       labels:
         severity: warning
@@ -65,7 +65,7 @@ groups:
         description: "Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete VALUE = {{ $value }}"
 
     - alert: KubernetesCronjobSuspended
-      expr: 'kube_cronjob_spec_suspend != 0'
+      expr: 'kube_cronjob_spec_suspend{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != 0'
       for: 0m
       labels:
         severity: warning
@@ -110,7 +110,7 @@ groups:
         description: "Persistent volume is in bad state VALUE = {{ $value }}"
 
     - alert: KubernetesStatefulsetDown
-      expr: 'kube_statefulset_replicas != kube_statefulset_status_replicas_ready > 0'
+      expr: 'kube_statefulset_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_statefulset_status_replicas_ready{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} > 0'
       for: 1m
       labels:
         severity: critical
@@ -119,7 +119,7 @@ groups:
         description: "A StatefulSet went down VALUE = {{ $value }}"
 
     - alert: KubernetesHpaScalingAbility
-      expr: 'kube_horizontalpodautoscaler_status_condition{status="false", condition="AbleToScale"} == 1'
+      expr: 'kube_horizontalpodautoscaler_status_condition{status="false", condition="AbleToScale", %{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} == 1'
       for: 2m
       labels:
         severity: warning
@@ -128,7 +128,7 @@ groups:
         description: "Pod is unable to scale VALUE = {{ $value }}"
 
     - alert: KubernetesHpaMetricAvailability
-      expr: 'kube_horizontalpodautoscaler_status_condition{status="false", condition="ScalingActive"} == 1'
+      expr: 'kube_horizontalpodautoscaler_status_condition{status="false", condition="ScalingActive", %{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} == 1'
       for: 0m
       labels:
         severity: warning
@@ -137,7 +137,7 @@ groups:
         description: "HPA is not able to collect metrics VALUE = {{ $value }}"
 
     - alert: KubernetesHpaScaleCapability
-      expr: 'kube_horizontalpodautoscaler_status_desired_replicas >= kube_horizontalpodautoscaler_spec_max_replicas'
+      expr: 'kube_horizontalpodautoscaler_status_desired_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} >= kube_horizontalpodautoscaler_spec_max_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}'
       for: 2m
       labels:
         severity: info
@@ -146,7 +146,7 @@ groups:
         description: "The maximum number of desired Pods has been hit VALUE = {{ $value }}"
 
     - alert: KubernetesHpaUnderutilized
-      expr: 'max(quantile_over_time(0.5, kube_horizontalpodautoscaler_status_desired_replicas[1d]) == kube_horizontalpodautoscaler_spec_min_replicas) by (horizontalpodautoscaler) > 3'
+      expr: 'max(quantile_over_time(0.5, kube_horizontalpodautoscaler_status_desired_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}[1d]) == kube_horizontalpodautoscaler_spec_min_replicas) by (horizontalpodautoscaler) > 3'
       for: 0m
       labels:
         severity: info
@@ -155,7 +155,7 @@ groups:
         description: "HPA is constantly at minimum replicas for 50% of the time. Potential cost saving here. VALUE = {{ $value }}"
 
     - alert: KubernetesPodNotHealthy
-      expr: 'sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0'
+      expr: 'sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed", %{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}) > 0'
       for: 15m
       labels:
         severity: critical
@@ -164,7 +164,7 @@ groups:
         description: "Pod has been in a non-ready state for longer than 15 minutes. VALUE = {{ $value }}"
 
     - alert: KubernetesPodCrashLooping
-      expr: 'increase(kube_pod_container_status_restarts_total[1m]) > 3'
+      expr: 'increase(kube_pod_container_status_restarts_total{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}[1m]) > 3'
       for: 2m
       labels:
         severity: warning
@@ -173,7 +173,7 @@ groups:
         description: "Pod {{ $labels.pod }} is crash looping VALUE = {{ $value }}"
 
     - alert: KubernetesReplicassetMismatch
-      expr: 'kube_replicaset_spec_replicas != kube_replicaset_status_ready_replicas'
+      expr: 'kube_replicaset_spec_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_replicaset_status_ready_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}'
       for: 10m
       labels:
         severity: warning
@@ -182,7 +182,7 @@ groups:
         description: "Deployment Replicas mismatch VALUE = {{ $value }}"
 
     - alert: KubernetesDeploymentReplicasMismatch
-      expr: 'kube_deployment_spec_replicas != kube_deployment_status_replicas_available'
+      expr: 'kube_deployment_spec_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_deployment_status_replicas_available{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}'
       for: 10m
       labels:
         severity: warning
@@ -191,7 +191,7 @@ groups:
         description: "Deployment Replicas mismatch VALUE = {{ $value }}"
 
     - alert: KubernetesStatefulsetReplicasMismatch
-      expr: 'kube_statefulset_status_replicas_ready != kube_statefulset_status_replicas'
+      expr: 'kube_statefulset_status_replicas_ready{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_statefulset_status_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}'
       for: 10m
       labels:
         severity: warning
@@ -200,7 +200,7 @@ groups:
         description: "A StatefulSet does not match the expected number of replicas. VALUE = {{ $value }}"
 
     - alert: KubernetesDeploymentGenerationMismatch
-      expr: 'kube_deployment_status_observed_generation != kube_deployment_metadata_generation'
+      expr: 'kube_deployment_status_observed_generation{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_deployment_metadata_generation{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}'
       for: 10m
       labels:
         severity: critical
@@ -209,7 +209,7 @@ groups:
         description: "A Deployment has failed but has not been rolled back. VALUE = {{ $value }}"
 
     - alert: KubernetesStatefulsetGenerationMismatch
-      expr: 'kube_statefulset_status_observed_generation != kube_statefulset_metadata_generation'
+      expr: 'kube_statefulset_status_observed_generation{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_statefulset_metadata_generation{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}'
       for: 10m
       labels:
         severity: critical
@@ -218,7 +218,7 @@ groups:
         description: "A StatefulSet has failed but has not been rolled back. VALUE = {{ $value }}"
 
     - alert: KubernetesStatefulsetUpdateNotRolledOut
-      expr: 'max without (revision) (kube_statefulset_status_current_revision unless kube_statefulset_status_update_revision) * (kube_statefulset_replicas != kube_statefulset_status_replicas_updated)'
+      expr: 'max without (revision) (kube_statefulset_status_current_revision{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} unless kube_statefulset_status_update_revision{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }}) * (kube_statefulset_replicas{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} != kube_statefulset_status_replicas_updated{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }})'
       for: 10m
       labels:
         severity: warning
@@ -227,7 +227,7 @@ groups:
         description: "StatefulSet update has not been rolled out. VALUE = {{ $value }}"
 
     - alert: KubernetesDaemonsetRolloutStuck
-      expr: 'kube_daemonset_status_number_ready / kube_daemonset_status_desired_number_scheduled * 100 < 100 or kube_daemonset_status_desired_number_scheduled - kube_daemonset_status_current_number_scheduled > 0'
+      expr: 'kube_daemonset_status_number_ready{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} / kube_daemonset_status_desired_number_scheduled{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} * 100 < 100 or kube_daemonset_status_desired_number_scheduled{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} - kube_daemonset_status_current_number_scheduled{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} > 0'
       for: 10m
       labels:
         severity: warning
@@ -245,7 +245,7 @@ groups:
         description: "Some DaemonSet Pods are running where they are not supposed to run VALUE = {{ $value }}"
 
     - alert: KubernetesCronjobTooLong
-      expr: 'time() - kube_cronjob_next_schedule_time > 3600'
+      expr: 'time() - kube_cronjob_next_schedule_time{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} > 3600'
       for: 0m
       labels:
         severity: warning
@@ -254,7 +254,7 @@ groups:
         description: "CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h to complete. VALUE = {{ $value }}"
 
     - alert: KubernetesJobSlowCompletion
-      expr: 'kube_job_spec_completions - kube_job_status_succeeded > 0'
+      expr: 'kube_job_spec_completions{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} - kube_job_status_succeeded{%{ if amp_alerting_rules_exclude_namespace != "" }${amp_alerting_rules_exclude_namespace}%{ endif }} > 0'
       for: 12h
       labels:
         severity: critical
