@@ -306,3 +306,12 @@ groups:
       annotations:
         summary: Kubernetes API server latency (instance {{ $labels.instance }})
         description: "Kubernetes API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}. VALUE = {{ $value }}"
+
+    - alert: AbsentInClusterPrometheus
+      expr: 'absent(prometheus_ready)'
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: In-cluster prometheus is unavailable
+        description: "In-cluster prometheus server is unavailable, metrics from the cluster is not getting scrapped"

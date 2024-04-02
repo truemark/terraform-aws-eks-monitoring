@@ -109,6 +109,3 @@ variable "amp_alerting_rules_exclude_namespace" {
   type        = string
   default     = ""
 }
-
-
-
