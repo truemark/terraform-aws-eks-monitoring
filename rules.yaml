@@ -315,3 +315,12 @@ groups:
       annotations:
         summary: In-cluster prometheus is unavailable
         description: "In-cluster prometheus server is unavailable, metrics from the cluster is not getting scrapped"
+
+    - alert: ClusterWorkerNodesDropping
+      expr: 'count(kube_node_info) * 0.90 > count(kube_node_info offset 5m)'
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Cluster worker nodes drop by 10% in 5 minutes
+        description: "The amount of cluster worker nodes has dropped by 10 percent in the last 5 minutes. VALUE = {{ $value }}"
