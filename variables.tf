@@ -109,3 +109,9 @@ variable "amp_alerting_rules_exclude_namespace" {
   type        = string
   default     = ""
 }
+
+variable "amp_custom_alerting_rules" {
+  description = "Prometheus K8s custom alerting rules"
+  type        = string
+  default     = ""
+}
