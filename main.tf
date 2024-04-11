@@ -138,7 +138,7 @@ resource "aws_prometheus_rule_group_namespace" "k8s" {
 
   name         = "k8s-rules"
   workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
-  data = templatefile("${path.module}/rules.yaml", {
+  data = var.amp_custom_alerting_rules == "" ? templatefile("${path.module}/rules.yaml", {
     amp_alerting_rules_exclude_namespace = var.amp_alerting_rules_exclude_namespace
-  })
+  }) : var.amp_custom_alerting_rules
 }
