@@ -136,7 +136,7 @@ EOF
 resource "aws_prometheus_rule_group_namespace" "k8s" {
   count = var.enable_alerts ? 1 : 0
 
-  name         = "k8s-rules"
+  name         = "${var.cluster_name}-rules"
   workspace_id = var.amp_name != null ? aws_prometheus_workspace.k8s.0.id : var.amp_id
   data = var.amp_custom_alerting_rules == "" ? templatefile("${path.module}/rules.yaml", {
     amp_alerting_rules_exclude_namespace = var.amp_alerting_rules_exclude_namespace
