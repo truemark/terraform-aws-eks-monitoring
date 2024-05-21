@@ -60,7 +60,7 @@ variable "enable_alerts" {
 }
 
 variable "prometheus_node_tolerations" {
-  description = "K8S node tolerations for prometheus"
+  description = "K8S node tolerations for prometheus server"
   type        = map(any)
   default = {
     tolerations : []
