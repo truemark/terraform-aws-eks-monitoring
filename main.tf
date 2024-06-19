@@ -84,6 +84,11 @@ resource "helm_release" "prometheus_install" {
     value = var.prometheus_server_data_volume_size
   }
 
+  set {
+    name  = "server.tolerations"
+    value = jsonencode(var.prometheus_node_tolerations)
+  }
+
   timeout = 600
 }
 
