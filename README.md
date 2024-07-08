@@ -1,3 +1,6 @@
+This repo is now deprecated, moving work to https://github.com/truemark/terraform-aws-eks!
+
+
 ## Requirements
 
 | Name | Version |
